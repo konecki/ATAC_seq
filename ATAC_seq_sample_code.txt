@@ -1,0 +1,2348 @@
+
+
+
+MI014 ATAC
+OVERALL:
+
+1.	Fast QC
+2.	Trim off adaptersx
+3.	Fast QC
+4.	Align to genome (bwa mem)
+5.	Filter, sort, index
+6.	Remove duplicates
+7.	Call peaks (MACS)
+1.	Re-run with Cux1 knockdown as control
+8.	Intersect peaks
+9.	Run GREAT analysis
+10.	Convert to bigwig
+11.	View on IGV
+12.	Look for motifs
+
+STILL TO DO:
+
+
+
+1.	Re-run MACS with no control (separate peaks files) for each of them
+2.	Intersect with bed intersect
+3.	Get numbers of peaks for everything
+4.	Try to convert to BigWig with megan’s code and view in Igv
+a.	Check for peakyness
+b.	converting the treat pile up file
+5.	GREAT
+a.	single nearest gene within a megabase
+6.	MOTIF (HOMER)
+7.	Change in expression (compare to RNA seq)
+8.	Compare between cell types
+a.	are the losses in open chromatin the same between cell types
+9.	nucleosome positioning
+a.	phasing
+10.	Compare with location of enhancers etc on blueprint (mouse  chromHMM?)
+11.	compare with mouse chromatin marks for stem cells 
+
+
+
+
+Motif:
+
+background: all peaks any open chromatin
+think about humans
+
+Fast QC
+
+#!/bin/bash
+
+### qsub file.name to run from anywhere
+
+#PBS -N fastQC_12
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=16gb
+#PBS -o /group/mcnerney-lab/mcnerney/longnecker_mouse_exome/2018_run/myjob.out
+#PBS -e /group/mcnerney-lab/mcnerney/longnecker_mouse_exome/2018_run/myjob.err
+
+module load java-jdk/1.8.0_92
+module load fastqc/0.11.5
+
+s1=/gpfs/data/mcnerney-lab/imgruet/MI014/
+s2=/gpfs/data/mcnerney-lab/imgruet/MI014/
+s3=/gpfs/data/mcnerney-lab/imgruet/MI014/
+s4=/gpfs/data/mcnerney-lab/imgruet/MI014/
+s5=/gpfs/data/mcnerney-lab/imgruet/MI014/
+s6=/gpfs/data/mcnerney-lab/imgruet/MI014/
+s7=/gpfs/data/mcnerney-lab/imgruet/MI014/
+s8=/gpfs/data/mcnerney-lab/imgruet/MI014/
+
+
+out=/group/mcnerney-lab/mcnerney/longnecker_mouse_exome/2018_run/fastQC
+log=/group/mcnerney-lab/mcnerney/longnecker_mouse_exome/2018_run/fastQC/12_fastQC.log
+
+
+fastqc -t 8 -o $out $s1 $s2 $s3 $s4 $s5 $s6 $s7 $s8 2> $log
+ 
+
+sample legends: S1: Renilla 1, S2:Renilla 2, S3: Renilla 3, S4: Cux1KO 1, S5: Cux1KO 2: S6: Cux1KO 3
+
+Mine
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=16gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/fastqc/fastq.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/fastqc/fastq.err
+
+date
+module load java-jdk/1.8.0_92
+module load fastqc/0.11.5
+
+s1=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI1_S1_L005_R1_001.fastq.gz
+s2=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI1_S1_L005_R2_001.fastq.gz
+s3=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI2_S2_L005_R1_001.fastq.gz
+s4=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI2_S2_L005_R2_001.fastq.gz
+s5=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI3_S3_L005_R1_001.fastq.gz
+s6=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI3_S3_L005_R2_001.fastq.gz
+s7=/gpfs/datamcnerney-lab/imgruet/MI014/MMcN-MI4_S4_L005_R1_001.fastq.gz
+s8=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI4_S4_L005_R2_001.fastq.gz
+s9=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI5_S5_L005_R1_001.fastq.gz
+s10=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI5_S5_L005_R2_001.fastq.gz
+s11=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI6_S6_L005_R1_001.fastq.gz
+s12=/gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI6_S6_L005_R2_001.fastq.gz
+
+
+out=/gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/fastqc
+log=/gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/fastqc.log
+
+
+fastqc -t 8 -o $out $s1 $s2 $s3 $s4 $s5 $s6 $s7 $s8 $s9 $s10 $s11 $s12 2> $log
+
+date
+echo END
+
+After trimmed 
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=16gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/fastqc/fastq.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/fastqc/fastq.err
+
+date
+module load java-jdk/1.8.0_92
+module load fastqc/0.11.5
+
+s1=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/R1_R1.fastq.gz
+s2=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/R1_R2.fastq.gz
+s3=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/R2_R1.fastq.gz
+s4=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/R2_R2.fastq.gz
+s5=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/R3_R1.fastq.gz
+s6=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/R3_R2.fastq.gz
+s7=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/C1_R1.fastq.gz
+s8=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/C1_R2.fastq.gz
+s9=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/C2_R1.fastq.gz
+s10=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/C2_R2.fastq.gz
+s11=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/C3_R1.fastq.gz
+s12=/gpfs/data/mcnerney-lab/imgruet/MI014/trimmed/C3_R2.fastq.gz
+
+
+out=/gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/fastqc
+log=/gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/fastqc/fastq.log
+
+fastqc -t 12 -o $out $s1 $s2 $s3 $s4 $s5 $s6 $s7 $s8 $s9 $s10 $s11 $s12 2> $log
+
+date
+echo END  
+
+
+CTGTCTCTTATACACATCT is the transposase end sequence
+
+Trimming off adapters
+R1_R1
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR1.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR1.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/R1_R1.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI1_S1_L005_R1_001.fastq.gz
+
+date
+echo END
+
+R1_R2
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR1b.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR1b.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/R1_R2.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI1_S1_L005_R2_001.fastq.gz
+
+date
+echo END 
+
+
+
+R2_R1
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR2.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR2.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/R2_R1.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI2_S2_L005_R1_001.fastq.gz
+
+date
+echo END 
+
+R2_R2
+
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR2b.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR2b.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/R2_R2.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI2_S2_L005_R2_001.fastq.gz
+
+date
+echo END 
+
+
+
+R3_R1
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR3.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR3.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/R3_R1.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI3_S3_L005_R1_001.fastq.gz
+
+date
+echo END 
+
+R3_R2
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR3b.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipR3b.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/R3_R2.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI3_S3_L005_R2_001.fastq.gz
+
+date
+echo END 
+C1_R1
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC1.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC1.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/C1_R1.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI4_S4_L005_R1_001.fastq.gz
+
+date
+echo END
+
+C1_R2
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC1b.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC1b.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/C1_R2.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI4_S4_L005_R2_001.fastq.gz
+
+date
+echo END
+
+
+
+
+C2_R1
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC2.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC2.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/C2_R1.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI5_S5_L005_R1_001.fastq.gz
+
+date
+echo END
+
+
+
+C2_R2
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC2b.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC2b.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/C2_R2.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI5_S5_L005_R2_001.fastq.gz
+
+date
+echo END
+
+
+C3_R1
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC3.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC3.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/C3_R1.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI6_S6_L005_R1_001.fastq.gz
+
+date
+echo END
+
+
+C3_R2
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC3b.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/snipsnipC3b.err
+
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+cutadapt -a CTGTCTCTTATACACATCT -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/C3_R2.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/MMcN-MI6_S6_L005_R2_001.fastq.gz
+
+date
+echo END
+
+
+
+
+**Originally ran all of this analysis without trimming, re-doing it trimemed**
+
+### qsub file.name to run from anywhere
+
+#PBS -N MI014
+#PBS -S /bin/bash
+#PBS -l walltime=6:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/MI014.out
+#PBS -e /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/MI014.err
+
+date
+
+module load gcc/6.2.0
+module load bwa/0.7.12
+bwa aln -t 4 /gpfs/data/mcnerney-lab/imgruet/Mouse10Ref/mm10genome.fa /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/R2_R1.fastq.gz /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/trimmed/R2_R2.fastq.gz > /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/MI014_R1-PE.fastq.sai 2> /gpfs/data/mcnerney-lab/imgruet/MI014/weihan_rerun/MI014.log
+
+date
+echo END
+
+EGR1_ChIP-seq_20160915/MLB-U-2_S5_L004_R1_001.fastq.gz > /group/mcnerney-lab/EGR1_ChIP-seq_20160915/MLB-U-2_S5_L004_R1_001.fastq.sai 2> /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-2b.log
+
+### put into sam format
+module load bwa/0.7.12
+bwa samse -f /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-2.sam /group/mcnerney-lab/reference/hg19/hg19_Ordered.fa /group/mcnerney-lab/EGR1_ChIP-seq_20160915/MLB-U-2_S5_L004_R1_001.fastq.sai /group/mcnerney-lab/EGR1_ChIP-seq_20160915/MLB-U-2_S5_L004_R1_001.fastq.gz
+
+ 
+Switching to BWA mem
+
+bwa mem [-aCHMpP] [-t nThreads] [-k minSeedLen] [-w bandWidth] [-d zDropoff] [-r seedSplitRatio] [-c maxOcc] [-A matchScore] [-B mmPenalty] [-O gapOpenPen] [-E gapExtPen] [-L clipPen] [-U unpairPen] [-R RGline] [-v verboseLevel] db.prefix reads.fq [mates.fq]
+Align 70bp-1Mbp query sequences with the BWA-MEM algorithm. Briefly, the algorithm works by seeding alignments with maximal exact matches (MEMs) and then extending seeds with the affine-gap Smith-Waterman algorithm (SW).
+
+If mates.fq file is absent and option -p is not set, this command regards input reads are single-end. If mates.fq is present, this command assumes the i-th read in reads.fq and the i-th read in mates.fq constitute a read pair. If -p is used, the command assumes the 2i-th and the (2i+1)-th read in reads.fq constitute a read pair (such input file is said to be interleaved). In this case, mates.fq is ignored. In the paired-end mode, the mem command will infer the read orientation and the insert size distribution from a batch of reads.
+
+The BWA-MEM algorithm performs local alignment. It may produce multiple primary alignments for different part of a query sequence. This is a crucial feature for long sequences. However, some tools such as Picard’s markDuplicates does not work with split alignments. One may consider to use option -M to flag shorter split hits as secondary.
+
+bwa mem ref.fa read1.fq read2.fq > aln-pe.sam
+
+
+#PBS -N MI014
+#PBS -S /bin/bash
+#PBS -l walltime=6:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/Output.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/Error.err
+
+date
+
+module load gcc/6.2.0
+module load bwa/0.7.12
+bwa mem -t 4 /group/mcnerney-lab/imgruet/Mouse10Ref/mm10genome.fa /group/mcnerney-lab/imgruet/MI014/MMcN-MI1_S1_L005_R1_001.fastq.gz /group/mcnerney-lab/imgruet/MI014/MMcN-MI1_S1_L005_R2_001.fastq.gz > /group/mcnerney-lab/imgruet/MI014/MI014_R1-PE.fastq.sam 2> /group/mcnerney-lab/imgruet/MI014/MI014.log
+
+date
+echo END
+
+Jeff’s code:
+#PBS -N atac31418
+#PBS -S /bin/bash
+#PBS -l walltime=6:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/JeffreyK/ATACseq31418.out
+#PBS -e /group/mcnerney-lab/JeffreyK/ATACseq31418/MI001.err
+
+date
+
+module load gcc/4.9.4
+module load bwa/0.7.12
+
+bwa mem -t 4 /group/mcnerney-lab/JeffreyK/hg19/hg19_Ordered.fa /group/mcnerney-lab/JeffreyK/ATACseq31418/MMcN-MI7_S7_L005_R1_001.fastq.gz /group/mcnerney-lab/JeffreyK/ATACseq31418/MMcN-MI7_S7_L005_R2_001.fastq.gz > /group/mcnerney-lab/JeffreyK/ATACseq31418/ctrl-pe.fastq.sam 2> /group/mcnerney-lab/JeffreyK/ATACseq31418/JKerr.log
+
+date
+echo END
+
+
+For bwa alignment step,Use this code: bwa mem is the newest algorithm of bmw recommended for read length > 70bps, and this takes in the trimmed sequence and directly output sam files. The mm9.fa is the indexed mm9 mouse genome, for mm10, we need to index it.
+FINAL, worked, used mm9:
+
+#PBS -N MI014_R1
+#PBS -S /bin/bash
+#PBS -l walltime=6:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/OutputR1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/ErrorR1.err
+
+date
+
+module load gcc/4.9.4
+module load bwa/0.7.12
+bwa mem -t 4 /group/mcnerney-lab/mcnerney/reference/mm9/mm9.fa /group/mcnerney-lab/imgruet/MI014/MMcN-MI1_S1_L005_R1_001.fastq.gz /group/mcnerney-lab/imgruet/MI014/MMcN-MI1_S1_L005_R2_001.fastq.gz > /group/mcnerney-lab/imgruet/MI014/MI014_R1-PE.fastq.sam 2> /group/mcnerney-lab/imgruet/MI014/MI014.log
+
+date
+echo END
+
+
+ 
+Making mm10 indexes
+
+BWA
+bwa index [-p prefix] [-a algoType] <in.db.fasta>
+
+Index database sequences in the FASTA format.
+
+OPTIONS:
+-p STR	Prefix of the output database [same as db filename]
+-a STR	Algorithm for constructing BWT index. Available options are:
+is
+IS linear-time algorithm for constructing suffix array. It requires 5.37N memory where N is the size of the database. IS is moderately fast, but does not work with database larger than 2GB. IS is the default algorithm due to its simplicity. The current codes for IS algorithm are reimplemented by Yuta Mori.
+bwtsw	
+Algorithm implemented in BWT-SW. This method works with the whole human genome.
+Used:
+(ran on my own terminal)
+
+bwa index -p mm10genome -a bwtsw /group/mcnerney-lab/imgruet/MI014/mm10genome.fa
+
+IDK STILL DIDN’T WORK BOO
+ 
+VIEW, SORT, INDEX, FLAGSTAT IN SAMTOOLS
+#!/bin/bash
+
+### qsub file.name to run from anywhere
+
+#PBS -N sam5
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o $HOME/myjob.out
+#PBS -e $HOME/myjob.err
+
+
+module load samtools/1.3.1
+
+samtools view -bSh -q 30 -o /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-2.q30.bam /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-2.sam
+
+samtools sort -o /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-2.q30.srt.bam /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-2.q30.bam
+
+samtools index /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-2.q30.srt.bam /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-2.q30.srt.bam.bai 
+
+#samtools flagstat /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-3.q30.srt.bam > /group/mcnerney-lab/EGR1_ChIP-seq_20160915/U-3.flagstat
+
+ 
+#PBS -N MI014_sam_
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o 
+#PBS -e 
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+q30= /group/mcnerney-lab/imgruet/MI014/MI014_sorted/
+in= /group/mcnerney-lab/imgruet/MI014/
+samtools view -bSh -q 30 -o $q30 $in
+
+sorted= /group/mcnerney-lab/imgruet/MI014/MI014_sorted/
+samtools sort -o $sorted $q30
+
+indexed= /group/mcnerney-lab/imgruet/MI014/MI014_sorted/
+samtools index $sorted $indexed
+
+flagstat= /group/mcnerney-lab/imgruet/MI014/MI014_sorted/
+samtools flagstat $sorted > $flagstat
+
+date
+echo END
+
+ 
+#PBS -N MI014_sam_R1
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.err
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+q30=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.bam
+in=/group/mcnerney-lab/imgruet/MI014/MI014_R1-PE.fastq.sam
+samtools view -bSh -q 30 -o $q30 $in 2> /group/mcnerney-lab/imgruet/MI014/MI014_sorted/MI014.log
+
+
+sorted=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flagstat=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.flagstat
+samtools flagstat $sorted > $flagstat
+
+date
+echo END
+
+ 
+#PBS -N MI014_sam_R3
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.err
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+q30=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.q30.bam
+in=/group/mcnerney-lab/imgruet/MI014/MI014_R3-PE.fastq.sam
+samtools view -bSh -q 30 -o $q30 $in 2> /group/mcnerney-lab/imgruet/MI014/MI014_sorted/MI014_R3.log
+
+
+sorted=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flagstat=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.flagstat
+samtools flagstat $sorted > $flagstat
+
+date
+echo END
+
+
+#PBS -N MI014_sam_R4
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R4.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R4.err
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+q30=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R4.q30.bam
+in=/group/mcnerney-lab/imgruet/MI014/MI014_R4-PE.fastq.sam
+samtools view -bSh -q 30 -o $q30 $in 2> /group/mcnerney-lab/imgruet/MI014/MI014_sorted/MI014_R4.log
+
+
+sorted=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R4.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R4.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flagstat=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R4.flagstat
+samtools flagstat $sorted > $flagstat
+
+date
+echo END
+
+#PBS -N MI014_sam_R5
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.err
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+q30=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.q30.bam
+in=/group/mcnerney-lab/imgruet/MI014/MI014_R5-PE.fastq.sam
+samtools view -bSh -q 30 -o $q30 $in 2> /group/mcnerney-lab/imgruet/MI014/MI014_sorted/MI014_R5.log
+
+
+sorted=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flagstat=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.flagstat
+samtools flagstat $sorted > $flagstat
+
+date
+echo END
+
+#PBS -N MI014_sam_R6
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.err
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+q30=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.q30.bam
+in=/group/mcnerney-lab/imgruet/MI014/MI014_R6-PE.fastq.sam
+samtools view -bSh -q 30 -o $q30 $in 2> /group/mcnerney-lab/imgruet/MI014/MI014_sorted/MI014_R6.log
+
+
+sorted=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flagstat=/group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.flagstat
+samtools flagstat $sorted > $flagstat
+
+date
+echo END
+ 
+MACS
+Molly’s, redone with shift and smoothing (MI001)
+Shift: -150
+Extsize: 300
+
+#!/bin/bash
+
+### qsub file.name to run from anywhere
+
+#PBS -N K562trialmacsb
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/ATACseq/K562b.out
+#PBS -e /group/mcnerney-lab/imgruet/ATACseq/K562b.err
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/ATACseq/MM-M2_S12_L002_R1_001.q30.srt.bam -f BAM -g hs -n K562ATACb -q 0.05 --outdir /group/mcnerney-lab/imgruet/ATACseq/K562Macs --nomodel --shift -150 --extsize 300 -B 2> /group/mcnerney-lab/imgruet/ATACseq/K562b.log
+
+date
+
+Example of CHIP seq shifted peaks: https://mygga.genomatix.de/online_help/help_regionminer/macs_output.png
+
+
+macs2 callpeak -t FILE/U-3.q30.srt.bam -c FILE/U-1.q30.srt.bam -f BAM -g hs -n Beginningofallfiles -q 0.05 --outdir outputfile -B 2> logfile.log
+•	-t: treatment filename
+o	This is the only REQUIRED parameter for MACS. File can be in any supported format specified by –format option. Check –format for detail. If you have more than one alignment files, you can specify them as `-t A B C`. MACS will pool up all these files together.
+•	A special mode will be triggered while format is specified as 'BAMPE' or 'BEDPE'. In this way, MACS2 will process the BAM or BED files as paired-end data. Instead of building bimodal distribution of plus and minus strand reads to predict fragment size, MACS2 now will use actual insert sizes of pairs of reads to build fragment pileup.
+•	
+
+New:
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/R1.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/R1.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R4.q30.srt.bam -c /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam -f BAMPE -g mm -n Stempeaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_R1.log
+
+date echo END
+
+CMP
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/CMP.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/CMP.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.q30.srt.bam -c /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R2.q30.srt.bam -f BAMPE -g mm -n CMPpeaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_CMP.log
+
+date echo END
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/gran.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/gran.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.q30.srt.bam -c /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.q30.srt.bam -f BAMPE -g mm -n Granpeaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_gran.log
+
+date echo END
+
+Mapping to Mitochondria
+Must use .bam file with the same name as its corresponding indexed file, .bai
+
+samtools idxstats alignments.bam
+samtools idxstats MM-M2_S12_L002_R1_001.q30.srt.bam
+
+
+ idxstats  samtools idxstats in.sam|in.bam|in.cram
+
+                 Retrieve  and  print stats in the index file corresponding to
+                 the input file.  Before calling idxstats, the input BAM  file
+                 must be indexed by samtools index.
+
+                 The output is TAB-delimited with each line consisting of ref-
+                 erence sequence name, sequence length, # mapped reads  and  #
+                 unmapped reads. It is written to stdout.
+ 
+REVERSE Ctl and Sample (looking for peaks enriched in the control)
+
+CMP
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/CMPRev.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/CMPRev.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R2.q30.srt.bam -c /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.q30.srt.bam -f BAMPE -g mm -n CMPpeaksRev -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_CMPRev.log  date 
+echo END
+
+Gran
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/granRev.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/granRev.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.q30.srt.bam -c /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.q30.srt.bam -f BAMPE -g mm -n GranpeaksRev -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_granRev.log
+
+date echo END
+
+MACS no control:
+RStem
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/RStemAlone.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/RStemAlone.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam -f BAMPE -g mm -n RStemAlone -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_RStemAlone.log  date 
+echo END
+
+RCMP
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/RCMPAlone.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/RCMPAlone.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R2.q30.srt.bam -f BAMPE -g mm -n RCMPAlone -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_RCMPAlone.log  date 
+echo END
+
+RGran
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/RGranAlone.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/RGranAlone.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R3.q30.srt.bam -f BAMPE -g mm -n RGranAlone -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_RGranAlone.log  date 
+echo END
+
+CStem
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/CStemAlone.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/CStemAlone.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R4.q30.srt.bam -f BAMPE -g mm -n CStemAlone -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_CStemAlone.log  
+date 
+echo END
+
+CCMPAlone
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/CCMPAlone.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/CCMPAlone.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R5.q30.srt.bam -f BAMPE -g mm -n CCMPAlone -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_CCMPAlone.log 
+
+date 
+echo END
+
+Cgran
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MACS/CGranAlone.err
+#PBS -e /group/mcnerney-lab/imgruet/MI014/MACS/CGranAlone.out
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R6.q30.srt.bam -f BAMPE -g mm -n CGranAlone -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/MACS -B 2> /group/mcnerney-lab/imgruet/MI014/MACS/log_CGranAlone.log 
+
+date 
+echo END
+
+
+Confirmed files
+	Control.Bdg	narrowPeak	Xls	Summmits	treatpileup
+RstemAlone	X	X	X	X	x
+Rcmpalone	X	X	X	X	X
+Rgranalone	X	X	X	X	X
+Cstemalone	X	X	X	X	X
+Ccmpalone	X	X	X	X	X
+Cgranalone	X	X	X	X	X
+
+Counting Number of Peaks
+word count of bed file 
+wc -l K562ATAC_summits.bed 
+Count: 13348
+Peak size average: 388.4056788
+
+Count K562_peaks.narrowPeak: 13348
+
+This time:
+	 wc -l filenam.bed or .narrowpeaks (same count)
+
+
+Intersecting:
+To get printed sites:
+	bedtools intersect -wa -a CStemAlone_summits.bed -b RStemAlone_summits.bed
+
+	**can count the lines that are chrom x or chrom y and subtract those
+
+To get the number of lines:
+bedtools intersect -wa -a CStemAlone_summits.bed -b RStemAlone_summits.bed | wc -l
+•	Tried originally intersecting only summits, but that led to really low numbers (called summit is like 1 bp)
+•	Re-doing with .narrowpeaks files, no restrictions on % overlap
+•	Options I want to use:
+o	-u 
+	reports each feature in a that overlaps a feature in b only once
+	So if a covers two small b peaks, it would only report one feature
+	But, would lead to some peaks not getting credit for being overlapping
+o	-v
+	Could look at which peaks do stem and cmp have in common that aren’t common to gran within Renilla and Cux1
+o	-f 
+	Not sure if we want to make the overlap more restrictive, ie at least 10% of the peak should be covered
+Recorded:
+bedtools intersect -b RStemAlone_peaks.narrowPeak -a CStemAlone_peaks.narrowPeak |wc -l
+
+•	didn’t restrict with any options
+•	bedtools/2.26.0
+
+bedtools intersect -a RStemAlone_peaks.narrowPeak -b RCMPAlone_peaks.narrowPeak | bedtools intersect -a stdin -b RGranAlone_peaks.narrowPeak -v | wc -l
+•	gives number of peaks that are shared between RStem and RCMP, but not RGran
+
+
+Making a venn diagram
+v = venneuler(c(A=10, B=11, C=13, 'A&B'=1, 'A&C'=13, 'B&C'=4, 'A&B&C'=1))
+venneuler(c(Rstem=4799, Rcmp=22955, Rgran=2673, ‘Rstem&Rcmp’=8979, ‘Rstem&Rgran’=159, ‘Rcmp&Rgran’=13013, Rstem&Rcmp&Rgran’=18,449))
+Made a script in R
+
+v = venneuler(c(Rstem=4799, Rcmp=22955, Rgran=2673, 'Rstem&Rcmp'=8979, 'Rstem&Rgran'=159, 'Rcmp&Rgran'=13013, 'Rstem&Rcmp&Rgran'=18499))
+plot(v)
+vlabels <- rep("", length(v$labels))
+plot(v)
+
+for cux1
+Cstem= 3615, Ccmp=18934, Cgran=1270, 'Cstem&Ccmp'=15172, 'Cstem&Cgran'=113, 'Ccmp&Cgran'=3831, 'Cstem&Ccmp&Cgran'=16481))
+To do:
+
+
+ 
+GREAT
+
+Need a 4 column bed file
+Example: cat IAD50966_124_Designed.bed | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' > output.bed
+	scans and takes the first four columns
+Mine:
+cat RStemAlone_summits.bed | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' > 4RStemAlone_summits.bed 
+
+1.	bedtools intersect -a CGranAlone_peaks.narrowPeak -b RGranAlone_peaks.narrowPeak -v > CuxGranOnly.bed
+2.	cat CuxGranOnly.bed | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' > 4CuxGranOnly.bed
+
+
+4RenStemOnly.bed
+4CuxStemOnly.bed
+4RenCMPOnly.bed
+4CuxCMPOnly.bed
+4RenGranOnly.bed
+4CuxGranOnly.bed
+4CMPOverlap.bed
+4GranOverlap.bed
+4StemOverlap.bed
+
+3.	Making bed files with R vs. C excluded
+4.	Taking the Renilla-only peaks and running through GREAT
+5.	Taking the Cux1-only peaks and running through GREAT
+
+
+ 
+Converting to  g
+
+chmod +x ./path/to/yourscript.sh
+And to run your script:
+/path/to/yourscript.sh
+Since . refers to the current directory: if yourscript.sh is in the current directory, you can simplify this to:
+./yourscript.sh
+
+https://genome.ucsc.edu/goldenpath/help/bigWig.html#Ex3
+1.	downloaded CMPbigwig at http://hgdownload.soe.ucsc.edu/admin/exe/ 
+2.	download fetchchromsizes at same site
+3.	made script with nano fetchchromsizes.sh
+4.	run it with
+a.	chmod +x /path/to/script.sh
+b.	./path/script.sh
+5.	it wants you to input your database info now; jk I just copied and pasted it from mm9 chrom sizes online
+6.	Running bedgraphtobigwig
+7.	bedGraphToBigWig in.bedGraph chrom.sizes myBigWig.bw
+
+**I had the wrong version, we need the macintosh x macOSX.x86_64/ 
+a.	redownloaded, gave permission, ran
+b.	New error:
+i.	is not case-sensitive sorted at line 36368. Please use "sort -k1,1 -k2,2n" with LC_COLLATE=C, or bedSort and try again.
+8.	Mollys-MacBook-Pro:~ mollyimgruet$ ./bedGraphToBigWig /Volumes/mcnerney-lab/imgruet/MI014/MACS/RStemAlone_treat_pileup.bdg mm9.chrom.sizes RStemAlone.bw
+9.	/Volumes/mcnerney-lab/imgruet/MI014/MACS/RStemAlone_treat_pileup.bdg is not case-sensitive sorted at line 36368.  Please use "sort -k1,1 -k2,2n" with LC_COLLATE=C,  or bedSort and try again.
+10.	Mollys-MacBook-Pro:~ mollyimgruet$ sed -n '36368, 36368’p 
+sed -n ‘36368, 36369’p 
+LC_COLLATE=C sort -k1,1 -k2,2n 
+ 
+11.	add in which genome you want to download
+
+LC_COLLATE=C sort -k1,1 -k2,2n /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/R1peaks_treat_pileup.bdg > /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R1_sorted.bdg
+
+./bedGraphToBigWig /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R1_sorted.bdg mm9.chrom.sizes /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R1peaks.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/R2peaks_treat_pileup.bdg > /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R2_sorted.bdg
+
+./bedGraphToBigWig /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R2_sorted.bdg mm9.chrom.sizes /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R2peaks.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/R3peaks_treat_pileup.bdg > /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R3_sorted.bdg
+
+./bedGraphToBigWig /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R3_sorted.bdg mm9.chrom.sizes /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R3peaks.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/C1peaks_treat_pileup.bdg > /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C1_sorted.bdg
+
+./bedGraphToBigWig /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C1_sorted.bdg mm9.chrom.sizes /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C1peaks.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/C2peaks_treat_pileup.bdg > /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C2_sorted.bdg
+
+./bedGraphToBigWig /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C2_sorted.bdg mm9.chrom.sizes /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C2peaks.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/C3peaks_treat_pileup.bdg > /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C3_sorted.bdg
+
+./bedGraphToBigWig /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C3_sorted.bdg mm9.chrom.sizes /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/C3peaks.bw
+
+
+
+ 
+Doing the files that had Cux1 knockdown as control
+unsorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/CMP_KDctrl_control_lambda.bdg
+
+sorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/CMP_KDctrl_control_lambda_sorted.bdg
+
+bigwig=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/CMP_KDctrl_control_lambda_sorted.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n $unsorted > $sorted
+
+./bedGraphToBigWig $sorted mm9.chrom.sizes $bigwig
+
+
+unsorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Stem_KDctrl_control_lambda.bdg
+
+sorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Stem_KDctrl_control_lambda_sorted.bdg
+
+bigwig=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Stem_KDctrl_control_lambda_sorted.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n $unsorted > $sorted
+
+./bedGraphToBigWig $sorted mm9.chrom.sizes $bigwig
+
+
+unsorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Gran_KDctrl_control_lambda.bdg
+
+sorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Gran_KDctrl_control_lambda_sorted.bdg
+
+bigwig=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Gran_KDctrl_control_lambda_sorted.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n $unsorted > $sorted
+
+./bedGraphToBigWig $sorted mm9.chrom.sizes $bigwig
+
+
+unsorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/CMP_KDctrl_treat_pileup.bdg
+
+sorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/CMP_KDctrl_treat_pileup_sorted.bdg
+
+bigwig=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/CMP_KDctrl_treat_pileup_sorted.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n $unsorted > $sorted
+
+./bedGraphToBigWig $sorted mm9.chrom.sizes $bigwig
+
+
+
+
+
+
+unsorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Stem_KDctrl_treat_pileup.bdg
+
+sorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Stem_KDctrl_treat_pileup_sorted.bdg
+
+bigwig=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Stem_KDctrl_treat_pileup_sorted.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n $unsorted > $sorted
+
+./bedGraphToBigWig $sorted mm9.chrom.sizes $bigwig
+
+
+
+unsorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Gran_KDctrl_treat_pileup.bdg
+
+sorted=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Gran_KDctrl_treat_pileup_sorted.bdg
+
+bigwig=/Users/mollyimgruet/Documents/Experiments/MI014/Results/trimmed/2remdup/Cux1KD_as_control/Gran_KDctrl_treat_pileup_sorted.bw
+
+
+LC_COLLATE=C sort -k1,1 -k2,2n $unsorted > $sorted
+
+./bedGraphToBigWig $sorted mm9.chrom.sizes $bigwig
+ 
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/bw.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/bw.err
+
+date
+
+module load gcc/6.2.0
+
+LC_COLLATE=C sort -k1,1 -k2,2n /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/R2peaks_treat_pileup.bdg > /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R2_sorted.bdg
+
+./bedGraphToBigWig /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R2_sorted.bdg mm9.chrom.sizes /Volumes/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/bigwig/R2peaks.bw
+
+date
+echo END
+
+
+ 
+Motif analysis MEME suite
+
+First using MEME, not MEME-CHIP 
+-	finding novel motif
+-	need to convert bed to fasta
+-	trying narrow peaks files first
+$ bedtools getfasta -fi test.fa -bed test.bed -fo test.fa.out
+-	 bedtools getfasta -fi RStemAlone_peaks.narrowpeaks
+JK just went to the galaxy website --used bedtoolsgetfastabed
+1.	upload data (icon on left)
+2.	choose correct genome 
+3.	run, download
+making a 4 collumn bed file:
+
+
+cat CuxGranOnly.bed | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' > 4Gran2_KDctrl_peaks.narrowpeak
+
+cat Gran2_KDctrl_peaks.narrowPeak | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' > 4Gran2_KDctrl.bed
+cat CMP2_KDctrl_peaks.narrowPeak | awk '{print $1 "\t" $2 "\t" $3 "\t" $4}' > 4CMP2_KDctrl.bed
+
+Plan:
+1.	get motifs for Renilla-only peaks (peaks lost when Cux1 is lost)
+2.	Make bed file of unique peaks
+3.	transform bedfile into fasta file
+4.	input into 
+
+
+Sample	Narrowpeaks File of Unique Peaks	Fasta File
+Rstem	4RenStemOnly.bed	4RenStemOnly.fasta
+Cstem	4CuxStemOnly.bed	4CuxStemOnly.fasta
+Rcmp	4RenCMPOnly.bed	4RenCMPOnly.fasta
+Ccmp	4CuxCMPOnly.bed	4CuxCMPOnly.fasta
+Rgran	4RenGranOnly.bed	4RenGranOnly.fasta
+Cgran	4CuxGranOnly.bed	4CuxGranOnly.fasta
+
+Cux1 KD as Control	Narrowpeaks File of Unique Peaks (minus RenCtrl overlap)	4 column	Fasta File (local)
+Gran_KDctrl_peaks.narrowpeak	Gran2_KDctrl_peaks.narrowpeak	4Gran2_KDctrl.bed	4Gran2_KDctrl.fasta
+CMP_KDctrl_peaks.narrowpeak	CMP2_KDctrl_peaks.narrowpeak	4CMP2_KDctrl.bed	4CMP2_KDctrl.fasta
+Stem_KDctrl_peaks.narrowpeak	--	4Stem_KDctrl.bed	4Stem_KDctrl.fasta
+
+
+
+5.	used meme-chip
+
+
+Removing duplicates
+samtools fixmate -r /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.marked.bam
+	removes secondary and unmapped reads
+
+samtools markdup -r -s -T /group/mcnerney-lab/imgruet/MI014/MI014_sorted/dup /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.nodup.bam 
+
+samtools rmdup /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.nodup.bam  
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MI014_sorted/RemDup.our
+#PBS -e /group/mcnerney-lab/imgruet/MI014 MI014_sorted/RemDup.err
+date
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+samtools rmdup /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.nodup.bam  
+date 
+echo END 
+
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/MI014_sorted/flagstat.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014 MI014_sorted/flagstat.err
+date
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+samtools flagstat /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.nodup.bam /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.nodup.flagstat  
+date 
+echo END 
+
+
+
+ 
+Trimmed files, re-analyzing
+
+Expected files:
+
+trimmed folder
+R1.out
+R1.err
+
+sam folder
+MI014_R1.fastq.sam
+logbwa_R1.log
+flag1R1_nofilter.flagstat
+MI014_R1.q30.bam
+logq30_R1.log
+R1.q30.srt.bam
+R1.q30.srt.srt.bam.bai
+flag2R1.flagstat
+idxR1.idxstats
+
+peaks folder
+R1Stem (5 files)
+logmacs_R1.log
+
+
+R1
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/R1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/R1.err
+
+date
+
+module load gcc/4.9.4
+module load bwa/0.7.12
+bwa=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_R1.fastq.sam
+bwa mem -t 4 /group/mcnerney-lab/mcnerney/reference/mm9/mm9.fa /group/mcnerney-lab/imgruet/MI014/trimmed/R1_R1.fastq.gz /group/mcnerney-lab/imgruet/MI014/trimmed/R1_R2.fastq.gz > $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logbwa_R1.log
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+flag1=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag1R1_nofilter.flagstat
+samtools flagstat $bwa > $flag1
+
+q30=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_R1.q30.bam
+samtools view -bSh -q 30 -o $q30 $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logq30_R1.log
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R1.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R1.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flag2=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag2R1.flagstat
+samtools flagstat $sorted > $flag2
+
+
+idxstats==/group/mcnerney-lab/imgruet/MI014/trimmed/sam/idxR1.idxstats
+samtools idxstats $sorted > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $sorted -f BAMPE -g mm -n R1Stem -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/peaks/logmacs_R1.log
+
+date 
+echo END
+
+
+ 
+R2
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/R2.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/R2.err
+
+date
+
+module load gcc/4.9.4
+module load bwa/0.7.12
+bwa=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_R2.fastq.sam
+bwa mem -t 4 /group/mcnerney-lab/mcnerney/reference/mm9/mm9.fa /group/mcnerney-lab/imgruet/MI014/trimmed/R2_R1.fastq.gz /group/mcnerney-lab/imgruet/MI014/trimmed/R2_R2.fastq.gz > $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logbwa_R2.log
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+flag1=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag1R2_nofilter.flagstat
+samtools flagstat $bwa > $flag1
+
+q30=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_R2.q30.bam
+samtools view -bSh -q 30 -o $q30 $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logq30_R2.log
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R2.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R2.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flag2=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag2R2.flagstat
+samtools flagstat $sorted > $flag2
+
+
+idxstats==/group/mcnerney-lab/imgruet/MI014/trimmed/sam/idxR2.idxstats
+samtools idxstats $sorted > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $sorted -f BAMPE -g mm -n R2CMP -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/peaks/logmacs_R2.log
+
+date 
+echo END
+R3
+
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/R3.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/R3.err
+
+date
+
+
+module load gcc/4.9.4
+module load bwa/0.7.12
+bwa=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_R3.fastq.sam
+bwa mem -t 4 /group/mcnerney-lab/mcnerney/reference/mm9/mm9.fa /group/mcnerney-lab/imgruet/MI014/trimmed/R3_R1.fastq.gz /group/mcnerney-lab/imgruet/MI014/trimmed/R3_R2.fastq.gz > $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logbwa_R3.log
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+flag1=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag1R3_nofilter.flagstat
+samtools flagstat $bwa > $flag1
+
+q30=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_R3.q30.bam
+samtools view -bSh -q 30 -o $q30 $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logq30_R3.log
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R3.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R3.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flag2=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag2R3.flagstat
+samtools flagstat $sorted > $flag2
+
+
+idxstats==/group/mcnerney-lab/imgruet/MI014/trimmed/sam/idxR3.idxstats
+samtools idxstats $sorted > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $sorted -f BAMPE -g mm -n R3Gran -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/peaks/logmacs_R3.log
+
+date 
+echo END
+
+C1
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/C1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/C1.err
+
+date
+
+module load gcc/4.9.4
+module load bwa/0.7.12
+bwa=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_C1.fastq.sam
+bwa mem -t 4 /group/mcnerney-lab/mcnerney/reference/mm9/mm9.fa /group/mcnerney-lab/imgruet/MI014/trimmed/C1_R1.fastq.gz /group/mcnerney-lab/imgruet/MI014/trimmed/C1_R2.fastq.gz > $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logbwa_C1.log
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+flag1=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag1C1_nofilter.flagstat
+samtools flagstat $bwa > $flag1
+
+q30=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_C1.q30.bam
+samtools view -bSh -q 30 -o $q30 $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logq30_C1.log
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C1.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C1.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flag2=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag2C1.flagstat
+samtools flagstat $sorted > $flag2
+
+
+idxstats==/group/mcnerney-lab/imgruet/MI014/trimmed/sam/idxC1.idxstats
+samtools idxstats $sorted > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $sorted -f BAMPE -g mm -n C1Stem -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/peaks/logmacs_C1.log
+
+date 
+echo END
+
+C2
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/C2.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/C2.err
+
+date
+
+module load gcc/4.9.4
+module load bwa/0.7.12
+bwa=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_C2.fastq.sam
+bwa mem -t 4 /group/mcnerney-lab/mcnerney/reference/mm9/mm9.fa /group/mcnerney-lab/imgruet/MI014/trimmed/C2_R1.fastq.gz /group/mcnerney-lab/imgruet/MI014/trimmed/C2_R2.fastq.gz > $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logbwa_C2.log
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+flag1=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag1C2_nofilter.flagstat
+samtools flagstat $bwa > $flag1
+
+q30=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_C2.q30.bam
+samtools view -bSh -q 30 -o $q30 $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logq30_C2.log
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C2.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C2.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flag2=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag2C2.flagstat
+samtools flagstat $sorted > $flag2
+
+
+idxstats==/group/mcnerney-lab/imgruet/MI014/trimmed/sam/idxC2.idxstats
+samtools idxstats $sorted > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $sorted -f BAMPE -g mm -n C2CMP -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/peaks/logmacs_C2.log
+
+date 
+echo END
+
+C3
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/C3.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/C3.err
+
+date
+
+module load gcc/4.9.4
+module load bwa/0.7.12
+bwa=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_C3.fastq.sam
+bwa mem -t 4 /group/mcnerney-lab/mcnerney/reference/mm9/mm9.fa /group/mcnerney-lab/imgruet/MI014/trimmed/C3_R1.fastq.gz /group/mcnerney-lab/imgruet/MI014/trimmed/C3_R2.fastq.gz > $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logbwa_C3.log
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+flag1=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag1C3_nofilter.flagstat
+samtools flagstat $bwa > $flag1
+
+q30=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_C3.q30.bam
+samtools view -bSh -q 30 -o $q30 $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logq30_C3.log
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C3.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C3.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flag2=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag2C3.flagstat
+samtools flagstat $sorted > $flag2
+
+
+idxstats==/group/mcnerney-lab/imgruet/MI014/trimmed/sam/idxC3.idxstats
+samtools idxstats $sorted > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $sorted -f BAMPE -g mm -n C3Gran -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/peaks/logmacs_C3.log
+
+date 
+echo END
+
+
+Ran these with trimmed files, need to go back to aligned files, remove duplicates, and then do the sort/index/flagstat
+•	figure out %dup
+
+
+Remove duplicates:
+samtools rmdup /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.bam /group/mcnerney-lab/imgruet/MI014/MI014_sorted/R1.q30.srt.nodup.bam
+
+samtools rmdup [-sS] <input.srt.bam> <out.bam>
+
+-s 
+Remove duplicates for single-end reads. By default, the command works for paired-end reads only.
+-S
+Treat paired-end reads and single-end reads.
+
+
+
+R1
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R1.err
+
+date
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+bwa=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/MI014_R1.fastq.sam
+
+q30=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/ R1.q30.bam
+samtools view -bSh -q 30 -o $q30 $bwa 2> /group/mcnerney-lab/imgruet/MI014/trimmed/sam/logq30_R1.log
+
+samtools rmdup
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R1.q30.srt.bam
+samtools sort -o $sorted $q30
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R1.q30.srt.bam.bai
+samtools index $sorted $indexed
+
+flag2=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/flag2R1.flagstat
+samtools flagstat $sorted > $flag2
+
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/idxR1.idxstats
+samtools idxstats $sorted > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $sorted -f BAMPE -g mm -n R1Stem -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/peaks/logmacs_R1.log
+
+date 
+echo END
+
+My new file to remove duplicates
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R1.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R1.q30.srt.bam
+nodup=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R1.q30.srt.nodup.bam
+samtools rmdup $sorted $nodup
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R1.q30.srt.nodup.flagstat
+samtools flagstat $nodup > $flag3
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R1.q30.srt.nodup.bai
+samtools index $nodup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/idxR1.idxstats
+samtools idxstats $nodup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $nodup -f BAMPE -g mm -n R1peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks/logmacs_R1.log
+
+date 
+echo END
+
+
+R2
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R2.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R2.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R2.q30.srt.bam
+nodup=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R2.q30.srt.nodup.bam
+samtools rmdup $sorted $nodup
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R2.q30.srt.nodup.flagstat
+samtools flagstat $nodup > $flag3
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R2.q30.srt.nodup.bai
+samtools index $nodup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/idxR2.idxstats
+samtools idxstats $nodup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $nodup -f BAMPE -g mm -n R2peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks/logmacs_R2.log
+
+date 
+echo END
+
+R3
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R3.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R3.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R3.q30.srt.bam
+nodup=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R3.q30.srt.nodup.bam
+samtools rmdup $sorted $nodup
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R3.q30.srt.nodup.flagstat
+samtools flagstat $nodup > $flag3
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/R3.q30.srt.nodup.bai
+samtools index $nodup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/idxR3.idxstats
+samtools idxstats $nodup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $nodup -f BAMPE -g mm -n R3peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks/logmacs_R3.log
+
+date 
+echo END
+
+C1
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C1.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C1.q30.srt.bam
+nodup=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C1.q30.srt.nodup.bam
+samtools rmdup $sorted $nodup
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C1.q30.srt.nodup.flagstat
+samtools flagstat $nodup > $flag3
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C1.q30.srt.nodup.bai
+samtools index $nodup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/idxC1.idxstats
+samtools idxstats $nodup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $nodup -f BAMPE -g mm -n C1peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks/logmacs_C1.log
+
+date 
+echo END 
+
+C2
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C2.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C2.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C2.q30.srt.bam
+nodup=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C2.q30.srt.nodup.bam
+samtools rmdup $sorted $nodup
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C2.q30.srt.nodup.flagstat
+samtools flagstat $nodup > $flag3
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C2.q30.srt.nodup.bai
+samtools index $nodup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/idxC2.idxstats
+samtools idxstats $nodup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $nodup -f BAMPE -g mm -n C2peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks/logmacs_C2.log
+
+date 
+echo END
+
+C3 
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C3.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C3.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.3.1
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C3.q30.srt.bam
+nodup=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C3.q30.srt.nodup.bam
+samtools rmdup $sorted $nodup
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C3.q30.srt.nodup.flagstat
+samtools flagstat $nodup > $flag3
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/C3.q30.srt.nodup.bai
+samtools index $nodup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/remdup/idxC3.idxstats
+samtools idxstats $nodup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $nodup -f BAMPE -g mm -n C3peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/remdup/peaks/logmacs_C3.log
+
+date 
+echo END  
+Switch to samtools/1.6.0
+--Use fixmate and then markdup instead of remdup
+
+Files:
+
+2remdup:
+R1.out
+R1.err
+R1.q30.namesrt.bam
+R1.q30.namesrt.fixed.bam
+R1.q30.namesrt.fixed.flagstat
+R1.q30.fixed.ptnsrt.bam
+R1.q30.fixed.dedup.bam
+R1.q30.srt.nodup.bai
+idxR1.idxstats
+
+log:
+namesortlogR1.log
+fixlogR1.log
+poslogR1.log
+marklogR1.log
+logmacs_R1.log
+
+peaks
+logmacs_R1.log
+
+R1
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/R1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/R1.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.6.0
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R1.q30.srt.bam
+namesort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.namesrt.bam
+sortlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/namesortlogR1.log
+samtools sort -n -o $namesort $sorted 2> $sortlog
+
+fixed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.namesrt.fixed.bam
+fixlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/fixlogR1.log
+samtools fixmate -r -m $namesort $fixed 2> $fixlog
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.namesrt.fixed.flagstat
+samtools flagstat $fixed > $flag3
+
+positionsort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.fixed.ptnsrt.bam
+poslog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/poslogR1.log
+samtools sort -o $positionsort $fixed 2> $poslog
+
+markdup=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.fixed.dedup.bam
+marklog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/marklogR1.log
+samtools markdup -r -s $positionsort $markdup
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.fixed.dedup.bai
+samtools index $markdup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/idxR1.idxstats
+samtools idxstats $markdup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $markdup -f BAMPE -g mm -n R1peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_R1.log
+
+date 
+echo END
+
+
+R2
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/R2.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/R2.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.6.0
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R2.q30.srt.bam
+namesort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.namesrt.bam
+sortlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/namesortlogR2.log
+samtools sort -n -o $namesort $sorted 2> $sortlog
+
+fixed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.namesrt.fixed.bam
+fixlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/fixlogR2.log
+samtools fixmate -r -m $namesort $fixed 2> $fixlog
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.namesrt.fixed.flagstat
+samtools flagstat $fixed > $flag3
+
+positionsort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.fixed.ptnsrt.bam
+poslog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/poslogR2.log
+samtools sort -o $positionsort $fixed 2> $poslog
+
+markdup=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.fixed.dedup.bam
+marklog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/marklogR2.log
+samtools markdup -r -s $positionsort $markdup
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.srt.nodup.bai
+samtools index $markdup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/idxR2.idxstats
+samtools idxstats $markdup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $markdup -f BAMPE -g mm -n R2peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_R2.log
+
+date 
+echo END
+
+
+R3
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/R3.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/R3.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.6.0
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/R3.q30.srt.bam
+namesort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R3.q30.namesrt.bam
+sortlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/namesortlogR3.log
+samtools sort -n -o $namesort $sorted 2> $sortlog
+
+fixed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R3.q30.namesrt.fixed.bam
+fixlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/fixlogR3.log
+samtools fixmate -r -m $namesort $fixed 2> $fixlog
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R3.q30.namesrt.fixed.flagstat
+samtools flagstat $fixed > $flag3
+
+positionsort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R3.q30.fixed.ptnsrt.bam
+poslog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/poslogR3.log
+samtools sort -o $positionsort $fixed 2> $poslog
+
+temp=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/markdupR3
+markdup=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R3.q30.fixed.dedup.bam
+marklog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/marklogR3.log
+samtools markdup -r -s $positionsort $markdup 2> $marklog
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R3.q30.srt.nodup.bai
+samtools index $markdup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/idxR3.idxstats
+samtools idxstats $markdup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $markdup -f BAMPE -g mm -n R3peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_R3.log
+
+date 
+echo END
+
+C1
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/C1.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/C1.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.6.0
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C1.q30.srt.bam
+namesort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.namesrt.bam
+sortlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/namesortlogC1.log
+samtools sort -n -o $namesort $sorted 2> $sortlog
+
+fixed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.namesrt.fixed.bam
+fixlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/fixlogC1.log
+samtools fixmate -r -m $namesort $fixed 2> $fixlog
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.namesrt.fixed.flagstat
+samtools flagstat $fixed > $flag3
+
+positionsort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.fixed.ptnsrt.bam
+poslog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/poslogC1.log
+samtools sort -o $positionsort $fixed 2> $poslog
+
+markdup=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.fixed.dedup.bam
+marklog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/marklogC1.log
+samtools markdup -r -s $positionsort $markdup 2> $marklog
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.fixed.dedup.bai samtools index $markdup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/idxC1.idxstats
+samtools idxstats $markdup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $markdup -f BAMPE -g mm -n C1peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_C1.log
+
+date 
+echo END
+
+C2
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/C2.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/C2.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.6.0
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C2.q30.srt.bam
+namesort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.namesrt.bam
+sortlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/namesortlogC2.log
+samtools sort -n -o $namesort $sorted 2> $sortlog
+
+fixed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.namesrt.fixed.bam
+fixlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/fixlogC2.log
+samtools fixmate -r -m $namesort $fixed 2> $fixlog
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.namesrt.fixed.flagstat
+samtools flagstat $fixed > $flag3
+
+positionsort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.fixed.ptnsrt.bam
+poslog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/poslogC2.log
+samtools sort -o $positionsort $fixed 2> $poslog
+
+markdup=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.fixed.dedup.bam
+marklog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/marklogC2.log
+samtools markdup -r -s $positionsort $markdup 2> $marklog
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.fixed.dedup.bai
+samtools index $markdup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/idxC2.idxstats
+samtools idxstats $markdup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $markdup -f BAMPE -g mm -n C2peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_C2.log
+
+date 
+echo END
+
+C3
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/C3.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/C3.err
+
+date
+
+
+module load gcc/6.2.0
+module load samtools/1.6.0
+
+sorted=/group/mcnerney-lab/imgruet/MI014/trimmed/sam/C3.q30.srt.bam
+namesort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.namesrt.bam
+sortlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/namesortlogC3.log
+samtools sort -n -o $namesort $sorted 2> $sortlog
+
+fixed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.namesrt.fixed.bam
+fixlog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/fixlogC3.log
+samtools fixmate -r -m $namesort $fixed 2> $fixlog
+
+flag3=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.namesrt.fixed.flagstat
+samtools flagstat $fixed > $flag3
+
+positionsort=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.fixed.ptnsrt.bam
+poslog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/poslogC3.log
+samtools sort -o $positionsort $fixed 2> $poslog
+
+markdup=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.fixed.dedup.bam
+marklog=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/marklogC3.log
+samtools markdup -r -s $positionsort $markdup 2> $marklog
+
+indexed=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.fixed.dedup.bai
+samtools index $markdup $indexed
+
+idxstats=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/idxC3.idxstats
+samtools idxstats $markdup > $idxstats
+
+module load python/2.7.13
+module load MACS2/2.1.0
+
+macs2 callpeak -t $markdup -f BAMPE -g mm -n C3peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_C3.log
+
+date 
+echo END
+
+
+
+
+
+ 
+Re-running MACS with Renilla as treated, Cux1 as control
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/R1peaks.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/R1peaks.err
+
+module load python/2.7.13
+module load macs2/2.1.0
+
+treat=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.fixed.dedup.bam
+control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.fixed.dedup.bam
+
+macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n Stem_KDctrl -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_Stem.log
+
+date 
+echo END
+
+
+CMP
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/CMPpeaks.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/CMPpeaks.err
+
+module load python/2.7.13
+module load macs2/2.1.0
+
+treat=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.fixed.dedup.bam
+control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.fixed.dedup.bam
+
+macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n CMP_KDctrl -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_CMP.log
+
+date 
+echo END
+
+Gran
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/Granpeaks.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/log/Granpeaks.err
+
+module load python/2.7.13
+module load macs2/2.1.0
+
+treat=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R3.q30.fixed.dedup.bam
+control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.fixed.dedup.bam
+
+macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n Gran_KDctrl -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_Gran.log
+
+date 
+echo END
+
+Scripts didn’t work, idk why, did it in terminal
+
+[mimgruet@cri16in002 2remdup]$ module load macs2/2.1.0
+[mimgruet@cri16in002 2remdup]$ module load macs2/2.1.0
+[mimgruet@cri16in002 2remdup]$ module load python/2.7.13
+
+[mimgruet@cri16in002 2remdup]$ module load macs2/2.1.0
+[mimgruet@cri16in002 2remdup]$ 
+
+[mimgruet@cri16in002 2remdup]$ treat=/group/mcnerney-
+lab/imgruet/MI014/trimmed/2remdup/R3.q30.fixed.dedup.bam
+[mimgruet@cri16in002 2remdup]$ control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.fixed.dedup.bam
+[mimgruet@cri16in002 2remdup]$ macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n Gran_KDctrl -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_Gran.log
+
+
+[mimgruet@cri16in002 2remdup]$ treat=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.fixed.dedup.bam
+[mimgruet@cri16in002 2remdup]$ control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.fixed.dedup.bam
+[mimgruet@cri16in002 2remdup]$ macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n CMP_KDctrl -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_CMP.log
+
+[mimgruet@cri16in002 2remdup]$ treat=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.fixed.dedup.bam
+[mimgruet@cri16in002 2remdup]$ control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.fixed.dedup.bam
+[mimgruet@cri16in002 2remdup]$ macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n Stem_KDctrl -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks -B 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/logmacs_Stem.log
+[mimgruet@cri16in002 2remdup]$ cd peaks/
+[mimgruet@cri16in002 peaks]$ wc -l Stem_KDctrl_peaks.narrowPeak 
+116 Stem_KDctrl_peaks.narrowPeak
+[mimgruet@cri16in002 peaks]$ 
+
+Renilla as Control:
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control/GranRCtrl.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control/GranRCtrl.err
+
+date
+
+module load python/2.7.13
+module load macs2/2.1.0
+
+control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R3.q30.fixed.dedup.bam
+treat=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C3.q30.fixed.dedup.bam
+
+macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n Gran_RenCtrl_peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control/Gran_RenCtrl.log
+
+date
+echo END
+
+#PBS -S /bin/bash
+#PBS -l walltime=8:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control/CMPRCtrl.out
+#PBS -e /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control/CMPRCtrl.err
+
+date
+
+module load python/2.7.13
+module load macs2/2.1.0
+
+control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R2.q30.fixed.dedup.bam
+treat=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C2.q30.fixed.dedup.bam
+
+macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n CMP_RenCtrl_peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control 2> /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control/CMP_RenCtrl.log
+
+date
+echo END
+
+
+
+macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n Gran_RenCtrl_peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control 
+
+macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n CMP_RenCtrl_peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control 
+
+control=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/R1.q30.fixed.dedup.bam
+treat=/group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/C1.q30.fixed.dedup.bam
+macs2 callpeak -t $treat -c $control -f BAMPE -g mm -n Stem_RenCtrl_peaks -q 0.05 --outdir /group/mcnerney-lab/imgruet/MI014/trimmed/2remdup/peaks/Ren_as_control 
+
+
