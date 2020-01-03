@@ -1,0 +1,37 @@
+Samtool analysis of sam files 
+
+#PBS -N samtools
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/konecki/SNK063/sample1_samtoolskd.out
+#PBS -e /gpfs/data/mcnerney-lab/konecki/SNK063/sample1_samtoolskd.err
+
+date
+
+module load gcc/6.2.0
+module load intel/2017
+module load samtools/1.3.1
+
+q30=/gpfs/data/mcnerney-lab/konecki/SNK063/sample1.q30.bam
+in=/gpfs/data/mcnerney-lab/konecki/SNK063/Algn_1_try2_interm.sam
+
+samtools view -bSh -q 30 -o $q30 $in
+
+sorted=/gpfs/data/mcnerney-lab/konecki/SNK063/sample1.q30.srt.bam
+
+samtools sort -o $sorted $q30
+
+indexed=/gpfs/data/mcnerney-lab/konecki/SNK063/sample1.q30.srt.bam.bai
+
+samtools index $sorted $indexed 
+
+flagstat=/gpfs/data/mcnerney-lab/konecki/SNK063/sample1.flagstat
+
+samtools flagstat $sorted > $flagstat
+
+date
+echo END
+
+#probably want to add in check for mitochondrial reads here as well 
