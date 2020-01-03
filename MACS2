@@ -1,0 +1,17 @@
+#PBS -N SNK063_MACS_2
+#PBS -S /bin/bash
+#PBS -l walltime=4:00:00
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=8gb
+#PBS -o /gpfs/data/mcnerney-lab/konecki/SNK063/macs2.out
+#PBS -e /gpfs/data/mcnerney-lab/konecki/SNK063/macs2.err
+
+date
+
+module load gcc/6.2.0
+module load python/2.7.13
+module load macs2/2.1.0
+
+macs2 callpeak -t /gpfs/data/mcnerney-lab/konecki/SNK063/Algn_2.q30.bam -f BAMPE -g mm -n peak_2 -q 0.05 --outdir /gpfs/data/mcnerney-lab/konecki/SNK063 -B 2> /gpfs/gpfs/data/mcnerney-lab/konecki/SNK063/macs_2.log
+date
+echo END
