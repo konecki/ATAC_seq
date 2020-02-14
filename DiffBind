@@ -1,0 +1,76 @@
+---
+title: "diffBind_renplusmid_vslow"
+author: "Stephanie Konecki"
+date: "2/13/2020"
+output: html_document
+---
+
+
+Step 1. Actual analysis 
+```{r}
+library(DiffBind)
+setwd("/Volumes/mcnerney-lab/konecki/SNK063/peak")
+RII_renandmid_vs_low <- dba(sampleSheet="CSV_replicates_RII_renandmid_vs_low.csv")
+#make sure dataset path has no peroids or spaces in it (besides the file exstention) and  file name includes '.csv'
+
+RII_renandmid_vs_low_read_in <- dba.count(RII_renandmid_vs_low)
+RII_renandmid_vs_low <- RII_renandmid_vs_low_read_in 
+RII_renandmid_vs_low <- dba.contrast(RII_renandmid_vs_low, categories = DBA_FACTOR, minMembers = 2) #divides by condition
+RII_renandmid_vs_low <- dba.analyze(RII_renandmid_vs_low) #analyzed using DESeq2
+RII_renandmid_vs_low.DB <- dba.report(RII_renandmid_vs_low) #returns differental sites
+
+#save RII_renandmid_vs_low_read_in in local SNK063 diffBind folder because it takes so long to load 
+```
+
+
+Step 2. Save data and generate plots 
+```{r}
+setwd("/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/") 
+#save all your analysis in one location locally
+
+RII_renandmid_vs_low_df = as(RII_renandmid_vs_low.DB, "data.frame")
+write.csv(RII_renandmid_vs_low_df, file = "RII_renandmid_vs_low_differences.csv")
+#save your dba report as a CSV file 
+
+pdf(file = "/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/RII_renandmid_vs_low_corr_heatmap.pdf")
+plot(RII_renandmid_vs_low, contrast=1)
+dev.off()
+#create correlation heatmap and save as pdf
+
+pdf(file = "/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/RII_renandmid_vs_low_PCA.pdf")
+dba.plotPCA(RII_renandmid_vs_low, DBA_CONDITION, label = DBA_CONDITION)
+dev.off()
+#create PCA plot and save as pdf
+
+pdf(file = "/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/RII_renandmid_vs_low_MA.pdf")
+dba.plotMA(RII_renandmid_vs_low, bFlip = TRUE)
+dev.off()
+#create MA plot and save as pdf
+
+pdf(file = "/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/RII_renandmid_vs_low_Vol.pdf")
+dba.plotVolcano(RII_renandmid_vs_low, bFlip = TRUE)
+dev.off()
+#create volcano plot and save as pdf 
+```
+
+Step 3. Generate Ven Diagrams 
+```{r}
+pdf(file = "/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/Ven_low.pdf")
+dba.plotVenn(RII_renandmid_vs_low, RII_renandmid_vs_low$masks$Low)
+dev.off()
+
+pdf(file = "/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/Ven_mid.pdf")
+dba.plotVenn(RII_renandmid_vs_low, RII_renandmid_vs_low$masks$Mid)
+dev.off()
+
+pdf(file = "/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/Ven_ren.pdf")
+dba.plotVenn(RII_renandmid_vs_low, RII_renandmid_vs_low$masks$Ren)
+dev.off()
+#generates ven diagrams for intersecting peaks in each genotype 
+
+pdf(file = "/Users/stephaniekonecki/Box\ Sync/grad\ school/Code/2020/SNK063_diffBind/Ven_control.pdf")
+dba.plotVenn(RII_renandmid_vs_low, RII_renandmid_vs_low$masks$Control)
+dev.off()
+#all the peaks in my control samples
+
+```
