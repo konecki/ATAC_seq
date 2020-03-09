@@ -1,4 +1,4 @@
-# ATAC_seq
+# ATAC seq
 This repository contains all codes for ATAC seq. It will be updated as the pipeline is polished 
 
 Outline of ATAC-seq pipeline
