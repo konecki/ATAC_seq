@@ -22,7 +22,6 @@ Step 5: Examine peaks in IGV
 
 
 Step 6: Compare peaks using bedtools
-	done, there's a script
 
 Step 7: Compare peak occupancy using diffBind
 see R script *important files in proper format*
